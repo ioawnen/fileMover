@@ -60,3 +60,11 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+#Backups of random crap
+*.bak
+
+#Test files, images, and videos
+*.jpg
+*.png
+*.mkv

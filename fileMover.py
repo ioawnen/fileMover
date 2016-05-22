@@ -31,8 +31,8 @@ PLATFORM_OVERRIDE_ENABLE = False
 PLATFORM_OVERRIDE_STRING = "linux"      #win32, linux, darwin
 
 DEBUG_OUTPUT_ENABLE = False
-EVERYTHING_BUT_MOVE = False              #Good for testing, does everything except actually perform the move.   #ADD TO SETTINGS.INI
-UNIT_TEST_ENABLE = True                                                                                        #ADD TO SETTINGS.INI
+EVERYTHING_BUT_MOVE = False             #Good for testing, does everything except actually perform the move.   #ADD TO SETTINGS.INI
+UNIT_TEST_ENABLE = False                                                                                        #ADD TO SETTINGS.INI
 
 #TRUE/FALSE ACCEPTED STRINGS
 TRUE_STRINGS = ['true', 'True', 'Yes', 'yes', 'aye', '1', 'Y', 'yarp']
@@ -43,6 +43,7 @@ INVALID_CHARS = ['\b', '\a', '\r' '\f'] #Fuck these literals in particular
 WARNING_CHARS = ['/', '*'] #TODO: ADD MORE
 
 #Everything that isn't a setting
+DETECTED_PLATFORM = "win32"             #TODO: This is redundant once I make moveFile properly cross platform
 MOVES_FILES_LIST = []
 ERRORS_LIST = []
 
@@ -72,7 +73,7 @@ def intToChmodPerm(input):
 
 def debugOut(output):
     """Outputs debug stuff when enabled in settings"""
-    if DEBUG_OUTPUT_ENABLE: 
+    if DEBUG_OUTPUT_ENABLE:
         print "DEBUG: "+output
 
 def stringToBool(input):
@@ -161,30 +162,6 @@ def getSettings():
 
     print "FILES LOCATION = "+FILES_LOCATION
 
-def sendEmail():
-    """Sends an email of what just happened"""
-    #TODO: Implement this!
-    print "Sending Email...."
-    print "(EMAIL ALERTS COMING SOON!)"
-
-    return True
-
-def getMoveOrders(): 
-    """DEPRECIATED"""
-
-    move_orders_list = []
-    move_file = open(MOVE_FILE_DIRECTORY+MOVE_FILE_NAME)
-    lines = str.split(move_file.read(),"\n")
-
-    for i, line in enumerate(lines):
-        if MOVE_FILE_SEPERATOR in line:
-            move_orders_list.append(line.split(MOVE_FILE_SEPERATOR))
-        else:
-            print "CANT READ LINE {0} IN move_orders.txt!\n{1}\n".format(i+1,line)
-
-    move_file.close()
-    return move_orders_list
-
 
 def getMoveOrders2():
     """Supports end operators"""
@@ -225,7 +202,7 @@ def getMoveOrders2():
 def getFiles(dir) :
     """Gets filenames in directory"""
     #TODO: this could be much better by checking if the folder exists before getting the files.
-    #TODO: Filter out imvalid charecters for os.walk here (like \).
+    #TODO: Filter out invalid charecters for os.walk here (like \).
 
     try:
         #filenames = next(os.walk(dir.encode('utf8')))[2] #BUGGY AS FUCK ON LINUX FOR NO GOOD REASON
@@ -252,6 +229,7 @@ def getFiles(dir) :
             debugOut("\t"+file)
 
     return filenames
+
 
 def fileSearcher(dir):
     try:
@@ -288,9 +266,8 @@ def fileSearcher(dir):
     return data
 
 
-
 def getFiles2(dir, depth = SCAN_DEPTH):
-    '''Improvement on getFiles, now scans through directories recursivly through subdirectories! Yay!'''
+    '''Improvement on getFiles, now scans recursively through subdirectories! Yay!'''
 
     files = []
     filesandpaths = []
@@ -305,21 +282,274 @@ def getFiles2(dir, depth = SCAN_DEPTH):
 
         for subdir in dirs:
             data = fileSearcher(subdir)
-            dirs = dirs + data['dirs'] 
+            dirs = dirs + data['dirs']
             files = files + data['files']
             filesandpaths = filesandpaths + data['filesandpaths']
             dirs.remove(subdir)
 
     data = {'files': files, 'filesandpaths': filesandpaths}
     return data
-    
 
-def moveFile(fileOrigin,fileName,fileDestination,overwrite=False):
+
+def moveFile2(filepathFull,fileName,fileDestination,overwrite=OVERWRITE_DUPLICATE_FILES):
     """DO THE MOVING THING"""
     #TODO: MOVE THIS SHIT TO THE TOP (REPEATED ELSEWHERE))
     #TODO: TRIM THIS THE FUCK DOWN. THE PROCESSES ARE ALL THE SAME AT THIS LEVEL
     if PLATFORM_OVERRIDE_ENABLE:
         _platform = PLATFORM_OVERRIDE_STRING
+    else:
+        _platform = DETECTED_PLATFORM
+
+    if EVERYTHING_BUT_MOVE:
+        print "EVERYTHING BUT MOVE MODE ENABLED, PRETENDING TO MOVE FILE"
+        return
+
+
+    try:
+        if not os.path.exists(fileDestination):
+            print "\t\tWARNING! Directory '"+str(fileDestination)+"' not found. Making a new one...."
+            os.makedirs(fileDestination)
+            if MOVED_FILE_PERMISSIONS_ENABLE:
+                print "\t\tPermissions are not currently supported with Windows, so turning it on is pointless."
+
+        os.rename(filepathFull, fileDestination+"/"+fileName)
+        print "\t\tFile move successful!"
+
+        if MOVED_FILE_PERMISSIONS_ENABLE:
+            print "\t\tPermissions are not currently supported with Windows, so turning it on is pointless."
+
+    except Exception as e:
+        print e
+        raise e
+
+
+def removeFile(file):
+    """Delete a specific file"""
+
+    _platform = DETECTED_PLATFORM
+
+    if PLATFORM_OVERRIDE_ENABLE:
+        _platform = PLATFORM_OVERRIDE_STRING
+
+    if _platform == "win32":
+        #WINDOWS
+        try:
+            os.remove(file)
+            return True
+        except Exception as exc:
+            print e
+            raise e
+
+    elif _platform == "linux":
+        #LINUX
+        try:
+            os.remove(file)
+            #os.System("rm "+file) #alternative
+            return True
+        except Exception as exc:
+            print e
+            raise e
+
+    elif _platform == "darwin":
+        #OSX
+        try:
+            os.remove(file)
+            #os.System("rm "+file) #alternative
+            return True
+        except Exception as exc:
+            print e
+            raise e
+
+    else:
+        print "ERROR! OS not supported! Oh no!.\nOS found: "+str(_platform)+"\nExiting...."
+        #return False
+        exit()
+
+
+def checkFiles2():
+    """Supports getMoveOrders2(), moveFile2(), overwriting files"""
+
+    for moveOrder in getMoveOrders2():
+        ##print "Checking for files...."
+        filenames = getFiles2(FILES_LOCATION) #TODO: Make this get called less often
+
+
+        ####### WITH END OPERATOR
+        if len(moveOrder) is 3:
+            #If the move order is three (end operator found), do search like this
+
+            print "\nChecking for matches with '"+moveOrder[0]+"'...'"+moveOrder[1]+"'"
+
+            for i, filename in enumerate(filenames['files']):
+                filenameandpath = filenames['filesandpaths'][i]
+
+                if filename.startswith(moveOrder[0]) and filename.endswith(moveOrder[1]):
+                    print "\tFound a match!\n\t\t"\
+                         +"Filename:\t{0}\n\t\t".format(filename)\
+                         +"Match Criteria:\t{0} ... {1}\n\t\t".format(moveOrder[0],moveOrder[1])\
+                         +"Move Location:\t{0}\n".format(moveOrder[2])
+
+                    if filename in getFiles(moveOrder[2].encode('utf8')):
+                        print "WARNING - Duplicate of '"+filename+"' found in '"+ moveOrder[2]
+
+                        if OVERWRITE_DUPLICATE_FILES:
+                            print "WARNING - Overwriting file"
+                            removeFile(moveOrder[2]+'/'+filename)
+                            moveFile2(filenameandpath,filename,moveOrder[2])
+
+                        else:
+                            print "WARNING - Skipping file"
+
+                    else:
+                        moveFile2(filenameandpath,filename,moveOrder[2])
+
+        elif len(moveOrder) is 2:
+            #If the move order is three (end operator found), do search like this
+
+            print "Checking for matches with '"+moveOrder[0]+"'"
+
+            for i, filename in enumerate(filenames['files']):
+                filenameandpath = filenames['filesandpaths'][i]
+
+                if filename.startswith(moveOrder[0]): #Check if filename matches what the move order asks for
+                    print "\tFound a match!\n\t\t"\
+                         +"Filename:\t{0}\n\t\t".format(filename)\
+                         +"Match Criteria:\t{1}\n\t\t".format(moveOrder[0])\
+                         +"Move Location:\t{2}\n".format(moveOrder[1])
+
+                    if filename in getFiles(moveOrder[1]): #Get rid of \ chartecters to denote spaces. It fucks with getFiles.
+                        print "WARNING - Duplicate of '"+filename+"' found in '"+ moveOrder[1]
+
+                        if OVERWRITE_DUPLICATE_FILES:
+                            print "WARNING - Overwriting file"
+                            removeFile(moveOrder[1]+'/'+filename)
+                            moveFile2(filenameandpath,filename,moveOrder[1])
+
+                        else:
+                            print "WARNING - Skipping file"
+
+                    else:
+                        moveFile2(filenameandpath,filename,moveOrder[1])
+
+        else:
+            print "ERROR! Move Order not recognised: '"+str(moveOrder)+"'\n Skipping it."
+
+
+def unitTest():
+    """tests functionality"""
+
+    print "################################\n"\
+        + "# WARNING! UNIT TESTS ENABLED! #\n"\
+        + "################################\n"
+
+    print "START OF TESTS\n"
+    print "Prerequisites:\n"\
+        + "\t- A source folder with files in it\n"\
+        + "\t- A properly configured settings file\n"\
+        + "\t- At least one valid move order\n"
+
+    """stringToBool"""
+    print "stringToBool()"
+    for true_string in TRUE_STRINGS:
+        if stringToBool(true_string):
+            print "\tPASSED\tInput = "+true_string+" Output = TRUE"
+        else:
+            print "\tFAILED\tInput = "+true_string
+
+    for false_string in FALSE_STRINGS:
+        if not stringToBool(false_string):
+            print "\tPASSED\tInput = "+false_string+" Output = FALSE"
+        else:
+            print "\tFAILED\tInput = "+false_string
+
+    """getMoveOrders2"""
+    print "\ngetMoveOrders2()"
+
+    orders = getMoveOrders2()
+    print "\t\tOrders found:"
+    for order in orders:
+        print "\t\t\t"+str(order)
+    if len(orders) is not 0:
+        print "\tPASSED\tOrders Found = "+str(len(orders))
+    else:
+        print "\tFAILED\tOrders Found = "+str(len(orders))
+
+    """getFiles"""
+    print "\ngetFiles()"
+
+    files = getFiles2(FILES_LOCATION)
+    print "\t\tFiles Found:"
+    for filename in files['filesandpaths']:
+        print "\t\t\t"+str(filename)
+    if len(files['filesandpaths']) is not 0:
+        print "\tPASSED\tFiles Found = "+str(len(files['filesandpaths']))
+    else:
+        print "\tFAILED\tFiles Found = "+str(len(files['filesandpaths']))
+
+    """getSettings"""
+    print "\ngetSettings()"
+
+    global AUTO_RECHECK
+    AUTO_RECHECK = "TEST_VALUE"
+    getSettings()
+    if AUTO_RECHECK!="TEST_VALUE":
+        print "\tPASSED\tAUTO_RECHECK Value = "+str(AUTO_RECHECK)
+    else:
+        print "\tFAILED\tAUTO_RECHECK Value = "+str(AUTO_RECHECK)
+
+
+    print "\nEND OF TESTS"
+
+
+##PROGRAM START
+print "~~~~~~~~~~~~~~~~~~~~~~\n"\
+     +"~   fileMover v0.1   ~\n"\
+     +"~~~~~~~~~~~~~~~~~~~~~~\n"
+
+
+
+#print(fileSearcher('C://test'))
+
+
+if UNIT_TEST_ENABLE:
+    getSettings()
+    unitTest()
+    exit()
+
+while True:
+
+    getSettings() #Get user settings before anything happens.
+
+    #checkFiles() #do the check
+    checkFiles2() #New checker with end operator support.
+
+    if AUTO_RECHECK:
+        rctime = datetime.datetime.now()+datetime.timedelta(seconds=RECHECK_MINS*60)
+        printtime = str(rctime.hour)+":"+str(rctime.minute)+":"+str(rctime.second)
+
+        print "\nFINSHED CHECKING. WILL CHECK AGAIN AT "+printtime
+        time.sleep(RECHECK_MINS*60)
+
+    else:
+        break
+
+print "\nFinished!"
+##PROGRAM END
+
+
+
+
+
+
+#####DEPRECIATED
+def moveFile(fileOrigin,fileName,fileDestination,overwrite=False):
+    """DEPRECIATED"""
+    #TODO: MOVE THIS SHIT TO THE TOP (REPEATED ELSEWHERE))
+    #TODO: TRIM THIS THE FUCK DOWN. THE PROCESSES ARE ALL THE SAME AT THIS LEVEL
+    if PLATFORM_OVERRIDE_ENABLE:
+        _platform = PLATFORM_OVERRIDE_STRING
+    else:
+        _platform = DETECTED_PLATFORM
 
     if EVERYTHING_BUT_MOVE:
         print "EVERYTHING BUT MOVE MODE ENABLED, PRETENDING TO MOVE FILE"
@@ -377,213 +607,18 @@ def moveFile(fileOrigin,fileName,fileDestination,overwrite=False):
         print "ERROR! OS not supported! Oh no!.\nOS found: "+str(_platform)+"\nExiting...."
         exit()
 
+def getMoveOrders():
+    """DEPRECIATED"""
 
-def removeFile(file):
-    """Delete a specific file"""
+    move_orders_list = []
+    move_file = open(MOVE_FILE_DIRECTORY+MOVE_FILE_NAME)
+    lines = str.split(move_file.read(),"\n")
 
-    _platform = PLATFORM_OVERRIDE_STRING #FIX THIS!
-
-    if PLATFORM_OVERRIDE_ENABLE:
-        _platform = PLATFORM_OVERRIDE_STRING
-
-    if _platform == "win32":
-        #WINDOWS
-        try:
-            os.remove(file)
-            return True
-        except Exception as exc:
-            print e
-            raise e
-
-    elif _platform == "linux":
-        #LINUX
-        try:
-            os.remove(file)
-            #os.System("rm "+file) #alternative
-            return True
-        except Exception as exc:
-            print e
-            raise e
-
-    elif _platform == "darwin":
-        #OSX
-        try:
-            os.remove(file)
-            #os.System("rm "+file) #alternative
-            return True
-        except Exception as exc:
-            print e
-            raise e
-
-    else:
-        print "ERROR! OS not supported! Oh no!.\nOS found: "+str(_platform)+"\nExiting...."
-        #return False
-        exit()
-
-
-def checkFiles2():
-    """Supports getMoveOrders2(), overwriting files"""
-
-    for moveOrder in getMoveOrders2():
-        ##print "Checking for files...."
-        filenames = getFiles(FILES_LOCATION) #TODO: Make this get called less often
-
-        ####### WITH END OPERATOR
-        if len(moveOrder) is 3:
-            #If the move order is three (end operator found), do search like this
-
-            print "\nChecking for matches with '"+moveOrder[0]+"'...'"+moveOrder[1]+"'"
-
-            for filename in filenames: #Iterate through the list of files
-                if filename.startswith(moveOrder[0]) and filename.endswith(moveOrder[1]):
-                    print "\tFound a match!\n\t\t"\
-                         +"Filename:\t{0}\n\t\t".format(filename)\
-                         +"Match Criteria:\t{0} ... {1}\n\t\t".format(moveOrder[0],moveOrder[1])\
-                         +"Move Location:\t{0}\n".format(moveOrder[2])
-
-                    if filename in getFiles(moveOrder[2].encode('utf8')):
-                        print "WARNING - Duplicate of '"+filename+"' found in '"+ moveOrder[2]
-
-                        if OVERWRITE_DUPLICATE_FILES:
-                            print "WARNING - Overwriting file"
-                            removeFile(moveOrder[2]+'/'+filename)
-                            moveFile(FILES_LOCATION,filename,moveOrder[2],True)
-
-                        else:
-                            print "WARNING - Skipping file"
-
-                    else:
-                        moveFile(FILES_LOCATION,filename,moveOrder[2])
-
-        elif len(moveOrder) is 2:
-            #If the move order is three (end operator found), do search like this
-
-            print "Checking for matches with '"+moveOrder[0]+"'"
-
-            for filename in filenames: #Iterate through the list of files
-
-                if filename.startswith(moveOrder[0]): #Check if filename matches what the move order asks for
-                    print "\tFound a match!\n\t\t"\
-                         +"Filename:\t{0}\n\t\t".format(filename)\
-                         +"Match Criteria:\t{1}\n\t\t".format(moveOrder[0])\
-                         +"Move Location:\t{2}\n".format(moveOrder[1])
-
-                    if filename in getFiles(moveOrder[1]): #Get rid of \ chartecters to denote spaces. It fucks with getFiles.
-                        print "WARNING - Duplicate of '"+filename+"' found in '"+ moveOrder[1]
-
-                        if OVERWRITE_DUPLICATE_FILES:
-                            print "WARNING - Overwriting file"
-                            removeFile(moveOrder[1]+'/'+filename)
-                            moveFile(FILES_LOCATION,filename,moveOrder[1],True)
-
-                        else:
-                            print "WARNING - Skipping file"
-
-                    else:
-                        moveFile(FILES_LOCATION,filename,moveOrder[1])
-
+    for i, line in enumerate(lines):
+        if MOVE_FILE_SEPERATOR in line:
+            move_orders_list.append(line.split(MOVE_FILE_SEPERATOR))
         else:
-            print "ERROR! Move Order not recognised: '"+str(moveOrder)+"'\n Skipping it."
+            print "CANT READ LINE {0} IN move_orders.txt!\n{1}\n".format(i+1,line)
 
-
-def unitTest():
-    """tests functionality"""
-
-    print "################################\n"\
-        + "# WARNING! UNIT TESTS ENABLED! #\n"\
-        + "################################\n"
-
-    print "START OF TESTS\n"
-    print "Prerequisites:\n"\
-        + "\t- A source folder with files in it\n"\
-        + "\t- A properly configured settings file\n"\
-        + "\t- At least one valid move order\n"
-
-    """stringToBool"""
-    print "stringToBool()"
-    for true_string in TRUE_STRINGS:
-        if stringToBool(true_string):
-            print "\tPASSED\tInput = "+true_string+" Output = TRUE"
-        else:    
-            print "\tFAILED\tInput = "+true_string
-
-    for false_string in FALSE_STRINGS:
-        if not stringToBool(false_string):
-            print "\tPASSED\tInput = "+false_string+" Output = FALSE"
-        else:
-            print "\tFAILED\tInput = "+false_string
-
-    """getMoveOrders2"""
-    print "\ngetMoveOrders2()"
-
-    orders = getMoveOrders2()
-    print "\t\tOrders found:"
-    for order in orders:
-        print "\t\t\t"+str(order)
-    if len(orders) is not 0:
-        print "\tPASSED\tOrders Found = "+str(len(orders))
-    else:
-        print "\tFAILED\tOrders Found = "+str(len(orders))
-
-    """getFiles"""
-    print "\ngetFiles()"
-
-    files = getFiles2(FILES_LOCATION)
-    print "\t\tFiles Found:"
-    for filename in files['filesandpaths']:
-        print "\t\t\t"+str(filename)
-    if len(files['filesandpaths']) is not 0:
-        print "\tPASSED\tFiles Found = "+str(len(files['filesandpaths']))
-    else:
-        print "\tFAILED\tFiles Found = "+str(len(files['filesandpaths']))
-
-    """getSettings"""
-    print "\ngetSettings()"
-
-    global AUTO_RECHECK
-    AUTO_RECHECK = "TEST_VALUE"
-    getSettings()
-    if AUTO_RECHECK!="TEST_VALUE":
-        print "\tPASSED\tAUTO_RECHECK Value = "+str(AUTO_RECHECK)
-    else:
-        print "\tFAILED\tAUTO_RECHECK Value = "+str(AUTO_RECHECK)
-
-
-    print "\nEND OF TESTS"
-
-
-
-##PROGRAM START
-print "~~~~~~~~~~~~~~~~~~~~~~\n"\
-     +"~   fileMover v0.1   ~\n"\
-     +"~~~~~~~~~~~~~~~~~~~~~~\n"
-
-
-
-#print(fileSearcher('C://test'))
-
-
-if UNIT_TEST_ENABLE:
-    getSettings()
-    unitTest()
-    exit()
-
-while True:
-
-    getSettings() #Get user settings before anything happens.
-
-    #checkFiles() #do the check
-    checkFiles2() #New checker with end operator support.
-
-    if AUTO_RECHECK:
-        rctime = datetime.datetime.now()+datetime.timedelta(seconds=RECHECK_MINS*60)
-        printtime = str(rctime.hour)+":"+str(rctime.minute)+":"+str(rctime.second)
-
-        print "\nFINSHED CHECKING. WILL CHECK AGAIN AT "+printtime
-        time.sleep(RECHECK_MINS*60)
-
-    else:
-        break
-
-print "\nFinished!"
-##PROGRAM END                               
+    move_file.close()
+    return move_orders_list

@@ -1,0 +1,27 @@
+BUGS:
+
+- settings.ini is generated using the test string value for RECHECK_ENABLED if testing is performed without an existing settings.ini file.
+
+- _platform does not set correctly (at least not on win10)
+
+
+FEATURES:
+
+- Basic UI wrapper for all those non terminal using normies (eventually).
+- Deep searches. Search in subdirectories for files.
+
+
+FURTHER WORK:
+
+- linux/darwin functionality needs to be tested / have tests made for it.
+
+- removeFile has not been made with linux/darwin in mind at all. exisitng code might work, but probably not.
+
+- unit tests need to be expanded to include moving files without fucking up everything or being to compicated to set up.
+	Maybe migrate unit tests to a seperate class that also generates files to test with, then remove/hide for releases.
+
+
+CHANGES:
+
+- default file permissions setting should be a somewhat sane value, not 777.
+

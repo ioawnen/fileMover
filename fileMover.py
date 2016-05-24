@@ -198,39 +198,6 @@ def getMoveOrders2():
 
     return move_orders_list
 
-
-def getFiles(dir) :
-    """Gets filenames in directory"""
-    #TODO: this could be much better by checking if the folder exists before getting the files.
-    #TODO: Filter out invalid charecters for os.walk here (like \).
-
-    try:
-        #filenames = next(os.walk(dir.encode('utf8')))[2] #BUGGY AS FUCK ON LINUX FOR NO GOOD REASON
-        filenames = []
-        dirnames = []
-
-        for(dpath, dnames, fnames) in os.walk(dir):
-            filenames.extend(fnames)
-            dirnames.extend(dnames)
-            break
-
-        print dirnames
-
-    #This exception is usually catastrophic (not finding the source folder).
-    except Exception as exc:
-        print "ERROR GETTING FILES! (Ignore if target folder does not yet exist) DIR = "+dir
-        print exc
-        print "END OF ERROR"
-        filenames = [] #Make an empty filenames object so it continues as usual.
-
-    if DEBUG_OUTPUT_ENABLE:
-        debugOut("Files found:")
-        for file in filenames:
-            debugOut("\t"+file)
-
-    return filenames
-
-
 def fileSearcher(dir):
     try:
         #filenames = next(os.walk(dir.encode('utf8')))[2] #BUGGY AS FUCK ON LINUX FOR NO GOOD REASON
@@ -622,3 +589,34 @@ def getMoveOrders():
 
     move_file.close()
     return move_orders_list
+
+def getFiles(dir) :
+    """Gets filenames in directory"""
+    #TODO: this could be much better by checking if the folder exists before getting the files.
+    #TODO: Filter out invalid charecters for os.walk here (like \).
+
+    try:
+        #filenames = next(os.walk(dir.encode('utf8')))[2] #BUGGY AS FUCK ON LINUX FOR NO GOOD REASON
+        filenames = []
+        dirnames = []
+
+        for(dpath, dnames, fnames) in os.walk(dir):
+            filenames.extend(fnames)
+            dirnames.extend(dnames)
+            break
+
+        print dirnames
+
+    #This exception is usually catastrophic (not finding the source folder).
+    except Exception as exc:
+        print "ERROR GETTING FILES! (Ignore if target folder does not yet exist) DIR = "+dir
+        print exc
+        print "END OF ERROR"
+        filenames = [] #Make an empty filenames object so it continues as usual.
+
+    if DEBUG_OUTPUT_ENABLE:
+        debugOut("Files found:")
+        for file in filenames:
+            debugOut("\t"+file)
+
+    return filenames

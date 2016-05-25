@@ -32,7 +32,7 @@ PLATFORM_OVERRIDE_STRING = "linux"      #win32, linux, darwin
 
 DEBUG_OUTPUT_ENABLE = False
 EVERYTHING_BUT_MOVE = False             #Good for testing, does everything except actually perform the move.   #ADD TO SETTINGS.INI
-UNIT_TEST_ENABLE = False                                                                                        #ADD TO SETTINGS.INI
+UNIT_TEST_ENABLE = True                                                                                        #ADD TO SETTINGS.INI
 
 #TRUE/FALSE ACCEPTED STRINGS
 TRUE_STRINGS = ['true', 'True', 'Yes', 'yes', 'aye', '1', 'Y', 'yarp']
@@ -85,7 +85,6 @@ def stringToBool(input):
         + "Typically caused by an error in the settings file. Check for errors.\n"\
         + "Accepted values:\n(TRUE) "+str(TRUE_STRINGS)+"\n(FALSE) "+str(FALSE_STRINGS)
         exit()
-
 
 def getSettings():
     """Gets program settings from a settings file"""
@@ -162,33 +161,28 @@ def getSettings():
 
     print "FILES LOCATION = "+FILES_LOCATION
 
-
 def getMoveOrders2():
-    """Supports end operators"""
+    """Gets move orders from the file, now supports end operators"""
 
     move_orders_list = []
 
-    move_file = open(MOVE_FILE_DIRECTORY+MOVE_FILE_NAME) #TODO: Move this string to the top
+    move_file = open(MOVE_FILE_DIRECTORY+MOVE_FILE_NAME)                                        #TODO: Move this string to the top
+    lines = str.split(move_file.read(), "\n")                                                   #Split file up
 
-    lines = str.split(move_file.read(), "\n") #Split file by new lines
 
     for i, line in enumerate(lines):
-
-        #Sanitize all the incoming orders
-        for char in INVALID_CHARS:
+        for char in INVALID_CHARS:                                                              #Sanitize all the incoming orders
             line = line.replace(char, "")
 
-        if not line == "" and MOVE_FILE_SEPERATOR in line:
-            if MOVE_NAME_SEPERATOR in line:
-                split_line = line.split(MOVE_FILE_SEPERATOR)
-                split_line2 = split_line[0].split(MOVE_NAME_SEPERATOR)
-                move_orders_list.append([split_line2[0], split_line2[1], split_line[1]])
-
+        if not line == "" and MOVE_FILE_SEPERATOR in line:                                      #Split up line where seperators are found
+            if MOVE_NAME_SEPERATOR in line:                                                     #If filename seperator found, do this stuff
+                split_line = line.split(MOVE_FILE_SEPERATOR)                                    #Split filename from destination
+                split_line2 = split_line[0].split(MOVE_NAME_SEPERATOR)                          #Split filename in two if seperator found
+                move_orders_list.append([split_line2[0], split_line2[1], split_line[1]])        #Append the order to the list (Looks like this: {'abc', '.xyz', '/some/destination'})
             else:
-                move_orders_list.append(line.split(MOVE_FILE_SEPERATOR))
-
+                move_orders_list.append(line.split(MOVE_FILE_SEPERATOR))                        #If filename seperator not found, just split once and append {'abc', '/some/destination'}
         else:
-            print "(Ignoring invalid line: '"+str(line)+"')"
+            print "(Ignoring invalid line: '"+str(line)+"')"                                    #If no seperators are found, discard the line
 
     move_file.close()
     if DEBUG_OUTPUT_ENABLE:
@@ -199,15 +193,17 @@ def getMoveOrders2():
     return move_orders_list
 
 def fileSearcher(dir):
+    """Gets files and directories from a directory. used by getFiles2"""
     try:
         #filenames = next(os.walk(dir.encode('utf8')))[2] #BUGGY AS FUCK ON LINUX FOR NO GOOD REASON
         filenames = []
         dirnames = []
 
-        for(dpath, dnames, fnames) in os.walk(dir):
-            filenames.extend(fnames)
-            dirnames.extend(dnames)
-            break
+        (dpath, dnames, fnames) in os.walk(dir)
+        filenames.extend(fnames)
+        dirnames.extend(dnames)
+        #break
+
 
         filenamesandpaths = []
         for f in filenames:

@@ -2,7 +2,6 @@
 # fileMover
 
 import os, time, datetime, ConfigParser, stat
-from sys import platform as _platform
 
 #TODO: Move all strings somewhere else (for easier localisation)
 
@@ -10,7 +9,7 @@ SETTINGS_OVERRIDE = False               #Ignores the settings file completely. U
 SETTINGS_FILE_LOCATION = ""             #Don't change this unless you REALLY have to.
 SETTINGS_FILE_NAME = "settings.ini"     #Same with this one.
 
-FILES_LOCATION = "C:/TEST1"
+FILES_LOCATION = "/tmp"
 OVERWRITE_DUPLICATE_FILES = True
 MOVED_FILE_PERMISSIONS_ENABLE = True   #LINUX ONLY
 MOVED_FILE_PERMISSIONS_VALUE = 17      #LINUX ONLY
@@ -23,10 +22,6 @@ MOVE_FILE_DIRECTORY = ""                #Nothing for same directory
 MOVE_FILE_NAME = "move_orders.txt"      #Don't bother changing this either.
 MOVE_FILE_SEPERATOR = "||"
 MOVE_NAME_SEPERATOR = "**"
-
-#VERY VERY EXPERIMENTAL
-PLATFORM_OVERRIDE_ENABLE = False
-PLATFORM_OVERRIDE_STRING = "linux"      #win32, linux, darwin
 
 DEBUG_OUTPUT_ENABLE = False
 EVERYTHING_BUT_MOVE = False             #Good for testing, does everything except actually perform the move.   #ADD TO SETTINGS.INI
@@ -41,7 +36,6 @@ INVALID_CHARS = ['\b', '\a', '\r' '\f'] #Fuck these literals in particular
 WARNING_CHARS = ['/', '*'] #TODO: ADD MORE
 
 #Everything that isn't a setting
-DETECTED_PLATFORM = "win32"             #TODO: This is redundant once I make moveFile properly cross platform
 MOVES_FILES_LIST = []
 ERRORS_LIST = []
 
@@ -159,6 +153,7 @@ def getSettings():
 
     print "FILES LOCATION = "+FILES_LOCATION
 
+
 def getMoveOrders2():
     """Gets move orders from the file, now supports end operators"""
 
@@ -199,8 +194,6 @@ def fileSearcher(dir):
         (dpath, dnames, fnames) in os.walk(dir)
         filenames.extend(fnames)
         dirnames.extend(dnames)
-        #break
-
 
         filenamesandpaths = []
         for f in filenames:
@@ -209,7 +202,6 @@ def fileSearcher(dir):
         dirnamesandpaths = []
         for d in dirnames:
             dirnamesandpaths.append(dir+'/'+str(d))
-
 
     except Exception as exc:
         print "ERROR GETTING FILES! (Ignore if target folder does not yet exist) DIR = "+dir
@@ -264,7 +256,6 @@ def moveFile2(filepathFull,fileName,fileDestination,overwrite=OVERWRITE_DUPLICAT
         print "EVERYTHING BUT MOVE MODE ENABLED, PRETENDING TO MOVE FILE"
         return
 
-
     try:
         if not os.path.exists(fileDestination):
             print "\t\tWARNING! Directory '"+str(fileDestination)+"' not found. Making a new one...."
@@ -294,14 +285,12 @@ def removeFile(file):
         exit()
 
 
-
 def checkFiles2():
     """Supports getMoveOrders2(), moveFile2(), overwriting files"""
 
     for moveOrder in getMoveOrders2():
         ##print "Checking for files...."
         filenames = getFiles2(FILES_LOCATION) #TODO: Make this get called less often
-
 
         ####### WITH END OPERATOR
         if len(moveOrder) is 3:
@@ -425,7 +414,6 @@ def unitTest():
         print "\tPASSED\tAUTO_RECHECK Value = "+str(AUTO_RECHECK)
     else:
         print "\tFAILED\tAUTO_RECHECK Value = "+str(AUTO_RECHECK)
-
 
     print "\nEND OF TESTS"
 

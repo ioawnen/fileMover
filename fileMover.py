@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
-#TODO: SANITIZE FUCKING EVERYTHING THAT I GET FROM ANYWHERE. REMOVE EVERY ASCII LITERAL EXCEPT FOR \n AND \t. FUCK THEM.
-
+# fileMover
 
 import os, time, datetime, ConfigParser, stat
 from sys import platform as _platform
@@ -195,7 +193,6 @@ def getMoveOrders2():
 def fileSearcher(dir):
     """Gets files and directories from a directory. used by getFiles2"""
     try:
-        #filenames = next(os.walk(dir.encode('utf8')))[2] #BUGGY AS FUCK ON LINUX FOR NO GOOD REASON
         filenames = []
         dirnames = []
 
@@ -287,46 +284,15 @@ def moveFile2(filepathFull,fileName,fileDestination,overwrite=OVERWRITE_DUPLICAT
 
 
 def removeFile(file):
-    """Delete a specific file"""
+    """Delete a specific file. Now somewhat unified"""
 
-    _platform = DETECTED_PLATFORM
+    try:
+        os.remove(file)
 
-    if PLATFORM_OVERRIDE_ENABLE:
-        _platform = PLATFORM_OVERRIDE_STRING
-
-    if _platform == "win32":
-        #WINDOWS
-        try:
-            os.remove(file)
-            return True
-        except Exception as exc:
-            print e
-            raise e
-
-    elif _platform == "linux":
-        #LINUX
-        try:
-            os.remove(file)
-            #os.System("rm "+file) #alternative
-            return True
-        except Exception as exc:
-            print e
-            raise e
-
-    elif _platform == "darwin":
-        #OSX
-        try:
-            os.remove(file)
-            #os.System("rm "+file) #alternative
-            return True
-        except Exception as exc:
-            print e
-            raise e
-
-    else:
-        print "ERROR! OS not supported! Oh no!.\nOS found: "+str(_platform)+"\nExiting...."
-        #return False
+    catch Exception as exc:
+        print exc
         exit()
+
 
 
 def checkFiles2():

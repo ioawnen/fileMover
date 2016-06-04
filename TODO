@@ -8,7 +8,7 @@ BUGS:
 FEATURES:
 
 - Basic UI wrapper for all those non terminal using normies (eventually).
-- Deep searches. Search in subdirectories for files.
+---- Deep searches. Search in subdirectories for files. (DONE!)
 
 
 FURTHER WORK:
@@ -24,4 +24,3 @@ FURTHER WORK:
 CHANGES:
 
 - default file permissions setting should be a somewhat sane value, not 777.
-

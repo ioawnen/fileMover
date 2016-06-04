@@ -435,150 +435,25 @@ print "~~~~~~~~~~~~~~~~~~~~~~\n"\
      +"~   fileMover v0.1   ~\n"\
      +"~~~~~~~~~~~~~~~~~~~~~~\n"
 
-
-
-#print(fileSearcher('C://test'))
-
-
-if UNIT_TEST_ENABLE:
+if UNIT_TEST_ENABLE:                    #Unit tests start
     getSettings()
     unitTest()
     exit()
 
-while True:
+while True:                             #Loops continuously for the auto recheck
 
-    getSettings() #Get user settings before anything happens.
+    getSettings()                       #Get user settings before anything happens.
 
-    #checkFiles() #do the check
-    checkFiles2() #New checker with end operator support.
+    checkFiles2()                       #Do the check. New checker with end operator support.
 
-    if AUTO_RECHECK:
+    if AUTO_RECHECK:                    #If auto recheck enabled, wait for specified time then loop again.
         rctime = datetime.datetime.now()+datetime.timedelta(seconds=RECHECK_MINS*60)
         printtime = str(rctime.hour)+":"+str(rctime.minute)+":"+str(rctime.second)
 
         print "\nFINSHED CHECKING. WILL CHECK AGAIN AT "+printtime
         time.sleep(RECHECK_MINS*60)
-
     else:
-        break
+        break                           #Otherwise, break out of the loop.
 
 print "\nFinished!"
 ##PROGRAM END
-
-
-
-
-
-
-#####DEPRECIATED
-def moveFile(fileOrigin,fileName,fileDestination,overwrite=False):
-    """DEPRECIATED"""
-    #TODO: MOVE THIS SHIT TO THE TOP (REPEATED ELSEWHERE))
-    #TODO: TRIM THIS THE FUCK DOWN. THE PROCESSES ARE ALL THE SAME AT THIS LEVEL
-    if PLATFORM_OVERRIDE_ENABLE:
-        _platform = PLATFORM_OVERRIDE_STRING
-    else:
-        _platform = DETECTED_PLATFORM
-
-    if EVERYTHING_BUT_MOVE:
-        print "EVERYTHING BUT MOVE MODE ENABLED, PRETENDING TO MOVE FILE"
-        return
-
-    if _platform == "win32": #Working on most systems
-        #DO WINDOWS MOVE
-        try:
-            if not os.path.exists(fileDestination):
-                print "\t\tWARNING! Directory '"+str(fileDestination)+"' not found. Making a new one...."
-                os.makedirs(fileDestination)
-                if MOVED_FILE_PERMISSIONS_ENABLE:
-                    print "\t\tPermissions are not currently supported with Windows, so turning it on is pointless."
-
-            os.rename(fileOrigin+"/"+fileName, fileDestination+"/"+fileName)
-            print "\t\tFile move successful!"
-
-            if MOVED_FILE_PERMISSIONS_ENABLE:
-                print "\t\tPermissions are not currently supported with Windows, so turning it on is pointless."
-
-        except Exception as e:
-            print e
-            raise e
-
-
-    elif _platform == "darwin": #Should be similar to Linux
-        #DO OSX MOVE
-        print "WARNING! OSX NOT SUPPORTED! EXITING!"
-        exit()
-
-
-
-    elif _platform == "linux": #Largely untested
-        #DO LINUX MOVE
-        try:
-            if not os.path.exists(fileDestination.replace("\r", "")):
-                print "\t\tWARNING! Directory '"+str(fileDestination)+"' not found. Making a new one...."
-                os.makedirs(fileDestination)
-
-                if MOVED_FILE_PERMISSIONS_ENABLE:
-                    print "\t\tChanged directory permissions to "+str(MOVED_FILE_PERMISSIONS_VALUE)
-                    os.chmod(fileDestination, stat.S_IRWXO)
-
-            os.rename((fileOrigin+"/"+fileName).replace("\r", ""), (fileDestination+"/"+fileName).replace("\r", ""))
-            print "\t\tFile move successful!"
-            if MOVED_FILE_PERMISSIONS_ENABLE:
-                os.chmod((fileDestination+"/"+fileName).replace("\r", ""), stat.S_IRWXO)
-                print "\t\tChanged file permissions to "+str(MOVED_FILE_PERMISSIONS_VALUE)
-
-        except Exception as e:
-            print e
-            raise e
-
-    else:
-        print "ERROR! OS not supported! Oh no!.\nOS found: "+str(_platform)+"\nExiting...."
-        exit()
-
-def getMoveOrders():
-    """DEPRECIATED"""
-
-    move_orders_list = []
-    move_file = open(MOVE_FILE_DIRECTORY+MOVE_FILE_NAME)
-    lines = str.split(move_file.read(),"\n")
-
-    for i, line in enumerate(lines):
-        if MOVE_FILE_SEPERATOR in line:
-            move_orders_list.append(line.split(MOVE_FILE_SEPERATOR))
-        else:
-            print "CANT READ LINE {0} IN move_orders.txt!\n{1}\n".format(i+1,line)
-
-    move_file.close()
-    return move_orders_list
-
-def getFiles(dir) :
-    """Gets filenames in directory"""
-    #TODO: this could be much better by checking if the folder exists before getting the files.
-    #TODO: Filter out invalid charecters for os.walk here (like \).
-
-    try:
-        #filenames = next(os.walk(dir.encode('utf8')))[2] #BUGGY AS FUCK ON LINUX FOR NO GOOD REASON
-        filenames = []
-        dirnames = []
-
-        for(dpath, dnames, fnames) in os.walk(dir):
-            filenames.extend(fnames)
-            dirnames.extend(dnames)
-            break
-
-        print dirnames
-
-    #This exception is usually catastrophic (not finding the source folder).
-    except Exception as exc:
-        print "ERROR GETTING FILES! (Ignore if target folder does not yet exist) DIR = "+dir
-        print exc
-        print "END OF ERROR"
-        filenames = [] #Make an empty filenames object so it continues as usual.
-
-    if DEBUG_OUTPUT_ENABLE:
-        debugOut("Files found:")
-        for file in filenames:
-            debugOut("\t"+file)
-
-    return filenames

@@ -66,16 +66,16 @@ def intToChmodPerm(input):
 def debugOut(output):
     """Outputs debug stuff when enabled in settings"""
     if DEBUG_OUTPUT_ENABLE:
-        print "DEBUG: "+output
+        print("DEBUG: "+output)
 
 def stringToBool(input):
     if str(input) in TRUE_STRINGS: return True
     elif str(input) in FALSE_STRINGS: return False
     else:
-        print "ERROR parsing string to boolean (true/false)\n"\
+        print("ERROR parsing string to boolean (true/false)\n"\
         + "Input: '"+input+"'\n"\
         + "Typically caused by an error in the settings file. Check for errors.\n"\
-        + "Accepted values:\n(TRUE) "+str(TRUE_STRINGS)+"\n(FALSE) "+str(FALSE_STRINGS)
+        + "Accepted values:\n(TRUE) "+str(TRUE_STRINGS)+"\n(FALSE) "+str(FALSE_STRINGS))
         exit()
 
 def getSettings():
@@ -106,7 +106,7 @@ def getSettings():
 
     #Make a new settings file if one doesn't exist.
     if not os.path.exists(SETTINGS_FILE_LOCATION+SETTINGS_FILE_NAME):
-        print "WARNING - settings.ini not found. Making one with default settings.\n"
+        print("WARNING - settings.ini not found. Making one with default settings.\n")
 
         settings_file = open(SETTINGS_FILE_LOCATION+SETTINGS_FILE_NAME, 'w')
 
@@ -151,7 +151,7 @@ def getSettings():
     PLATFORM_OVERRIDE_STRING        = settings.get('Platform Override', 'Platform Override Option')
     DEBUG_OUTPUT_ENABLE             = stringToBool(settings.get('Other', 'Debug Output Enable'))
 
-    print "FILES LOCATION = "+FILES_LOCATION
+    print("FILES LOCATION = "+FILES_LOCATION)
 
 
 def getMoveOrders2():
@@ -175,13 +175,13 @@ def getMoveOrders2():
             else:
                 move_orders_list.append(line.split(MOVE_FILE_SEPERATOR))                        #If filename seperator not found, just split once and append {'abc', '/some/destination'}
         else:
-            print "(Ignoring invalid line: '"+str(line)+"')"                                    #If no seperators are found, discard the line
+            print("(Ignoring invalid line: '"+str(line)+"')")                                    #If no seperators are found, discard the line
 
     move_file.close()
     if DEBUG_OUTPUT_ENABLE:
-        print "MOVE ORDERS:"
+        print("MOVE ORDERS:")
         for move in move_orders_list:
-            print repr(move) #print literals too
+            print(repr(move)) #print literals too
 
     return move_orders_list
 
@@ -204,9 +204,9 @@ def fileSearcher(dir):
             dirnamesandpaths.append(dir+'/'+str(d))
 
     except Exception as exc:
-        print "ERROR GETTING FILES! (Ignore if target folder does not yet exist) DIR = "+dir
-        print exc
-        print "END OF ERROR"
+        print("ERROR GETTING FILES! (Ignore if target folder does not yet exist) DIR = "+dir)
+        print(exc)
+        print("END OF ERROR")
         filenames = [] #Make an empty filenames object so it continues as usual.
 
     if DEBUG_OUTPUT_ENABLE:
@@ -253,25 +253,25 @@ def moveFile2(filepathFull,fileName,fileDestination,overwrite=OVERWRITE_DUPLICAT
         _platform = DETECTED_PLATFORM
 
     if EVERYTHING_BUT_MOVE:
-        print "EVERYTHING BUT MOVE MODE ENABLED, PRETENDING TO MOVE FILE"
+        print("EVERYTHING BUT MOVE MODE ENABLED, PRETENDING TO MOVE FILE")
         return
 
     try:
         if not os.path.exists(fileDestination):
-            print "\t\tWARNING! Directory '"+str(fileDestination)+"' not found. Making a new one...."
+            print("\t\tWARNING! Directory '"+str(fileDestination)+"' not found. Making a new one....")
             os.makedirs(fileDestination)
             if MOVED_FILE_PERMISSIONS_ENABLE:
-                print "\t\tPermissions are not currently supported with Windows, so turning it on is pointless."
+                print("\t\tPermissions are not currently supported with Windows, so turning it on is pointless.")
 
         os.rename(filepathFull, fileDestination+"/"+fileName)
-        print "\t\tFile move successful!"
+        print("\t\tFile move successful!")
 
         if MOVED_FILE_PERMISSIONS_ENABLE:
-            print "\t\tPermissions are not currently supported with Windows, so turning it on is pointless."
+            print("\t\tPermissions are not currently supported with Windows, so turning it on is pointless.")
 
     except Exception as e:
-        print e
-        raise e
+        print(e)
+        raise(e)
 
 
 def removeFile(file):
@@ -281,7 +281,7 @@ def removeFile(file):
         os.remove(file)
 
     except Exception as exc:
-        print exc
+        print(exc)
         exit()
 
 
@@ -296,27 +296,27 @@ def checkFiles2():
         if len(moveOrder) is 3:
             #If the move order is three (end operator found), do search like this
 
-            print "\nChecking for matches with '"+moveOrder[0]+"'...'"+moveOrder[1]+"'"
+            print("\nChecking for matches with '"+moveOrder[0]+"'...'"+moveOrder[1]+"'")
 
             for i, filename in enumerate(filenames['files']):
                 filenameandpath = filenames['filesandpaths'][i]
 
                 if filename.startswith(moveOrder[0]) and filename.endswith(moveOrder[1]):
-                    print "\tFound a match!\n\t\t"\
+                    print("\tFound a match!\n\t\t"\
                          +"Filename:\t{0}\n\t\t".format(filename)\
                          +"Match Criteria:\t{0} ... {1}\n\t\t".format(moveOrder[0],moveOrder[1])\
-                         +"Move Location:\t{0}\n".format(moveOrder[2])
+                         +"Move Location:\t{0}\n".format(moveOrder[2]))
 
                     if filename in getFiles(moveOrder[2].encode('utf8')):
-                        print "WARNING - Duplicate of '"+filename+"' found in '"+ moveOrder[2]
+                        print("WARNING - Duplicate of '"+filename+"' found in '"+ moveOrder[2])
 
                         if OVERWRITE_DUPLICATE_FILES:
-                            print "WARNING - Overwriting file"
+                            print("WARNING - Overwriting file")
                             removeFile(moveOrder[2]+'/'+filename)
                             moveFile2(filenameandpath,filename,moveOrder[2])
 
                         else:
-                            print "WARNING - Skipping file"
+                            print("WARNING - Skipping file")
 
                     else:
                         moveFile2(filenameandpath,filename,moveOrder[2])
@@ -324,104 +324,104 @@ def checkFiles2():
         elif len(moveOrder) is 2:
             #If the move order is three (end operator found), do search like this
 
-            print "Checking for matches with '"+moveOrder[0]+"'"
+            print("Checking for matches with '"+moveOrder[0]+"'")
 
             for i, filename in enumerate(filenames['files']):
                 filenameandpath = filenames['filesandpaths'][i]
 
                 if filename.startswith(moveOrder[0]): #Check if filename matches what the move order asks for
-                    print "\tFound a match!\n\t\t"\
+                    print("\tFound a match!\n\t\t"\
                          +"Filename:\t{0}\n\t\t".format(filename)\
                          +"Match Criteria:\t{1}\n\t\t".format(moveOrder[0])\
-                         +"Move Location:\t{2}\n".format(moveOrder[1])
+                         +"Move Location:\t{2}\n".format(moveOrder[1]))
 
                     if filename in getFiles(moveOrder[1]): #Get rid of \ chartecters to denote spaces. It fucks with getFiles.
-                        print "WARNING - Duplicate of '"+filename+"' found in '"+ moveOrder[1]
+                        print("WARNING - Duplicate of '"+filename+"' found in '"+ moveOrder[1])
 
                         if OVERWRITE_DUPLICATE_FILES:
-                            print "WARNING - Overwriting file"
+                            print("WARNING - Overwriting file")
                             removeFile(moveOrder[1]+'/'+filename)
                             moveFile2(filenameandpath,filename,moveOrder[1])
 
                         else:
-                            print "WARNING - Skipping file"
+                            print("WARNING - Skipping file")
 
                     else:
                         moveFile2(filenameandpath,filename,moveOrder[1])
 
         else:
-            print "ERROR! Move Order not recognised: '"+str(moveOrder)+"'\n Skipping it."
+            print("ERROR! Move Order not recognised: '"+str(moveOrder)+"'\n Skipping it.")
 
 
 def unitTest():
     """tests functionality"""
 
-    print "################################\n"\
+    print("################################\n"\
         + "# WARNING! UNIT TESTS ENABLED! #\n"\
-        + "################################\n"
+        + "################################\n")
 
-    print "START OF TESTS\n"
-    print "Prerequisites:\n"\
+    print("START OF TESTS\n")
+    print("Prerequisites:\n"\
         + "\t- A source folder with files in it\n"\
         + "\t- A properly configured settings file\n"\
-        + "\t- At least one valid move order\n"
+        + "\t- At least one valid move order\n")
 
     """stringToBool"""
-    print "stringToBool()"
+    print("stringToBool()")
     for true_string in TRUE_STRINGS:
         if stringToBool(true_string):
-            print "\tPASSED\tInput = "+true_string+" Output = TRUE"
+            print("\tPASSED\tInput = "+true_string+" Output = TRUE")
         else:
-            print "\tFAILED\tInput = "+true_string
+            print("\tFAILED\tInput = "+true_string)
 
     for false_string in FALSE_STRINGS:
         if not stringToBool(false_string):
-            print "\tPASSED\tInput = "+false_string+" Output = FALSE"
+            print("\tPASSED\tInput = "+false_string+" Output = FALSE")
         else:
-            print "\tFAILED\tInput = "+false_string
+            print()"\tFAILED\tInput = "+false_string)
 
     """getMoveOrders2"""
-    print "\ngetMoveOrders2()"
+    print("\ngetMoveOrders2()")
 
     orders = getMoveOrders2()
-    print "\t\tOrders found:"
+    print("\t\tOrders found:")
     for order in orders:
-        print "\t\t\t"+str(order)
+        print("\t\t\t"+str(order))
     if len(orders) is not 0:
-        print "\tPASSED\tOrders Found = "+str(len(orders))
+        print("\tPASSED\tOrders Found = "+str(len(orders)))
     else:
-        print "\tFAILED\tOrders Found = "+str(len(orders))
+        print("\tFAILED\tOrders Found = "+str(len(orders)))
 
     """getFiles"""
-    print "\ngetFiles()"
+    print("\ngetFiles()")
 
     files = getFiles2(FILES_LOCATION)
-    print "\t\tFiles Found:"
+    print("\t\tFiles Found:")
     for filename in files['filesandpaths']:
-        print "\t\t\t"+str(filename)
+        print("\t\t\t"+str(filename))
     if len(files['filesandpaths']) is not 0:
-        print "\tPASSED\tFiles Found = "+str(len(files['filesandpaths']))
+        print("\tPASSED\tFiles Found = "+str(len(files['filesandpaths'])))
     else:
-        print "\tFAILED\tFiles Found = "+str(len(files['filesandpaths']))
+        print("\tFAILED\tFiles Found = "+str(len(files['filesandpaths'])))
 
     """getSettings"""
-    print "\ngetSettings()"
+    print("\ngetSettings()")
 
     global AUTO_RECHECK
     AUTO_RECHECK = "TEST_VALUE"
     getSettings()
     if AUTO_RECHECK!="TEST_VALUE":
-        print "\tPASSED\tAUTO_RECHECK Value = "+str(AUTO_RECHECK)
+        print("\tPASSED\tAUTO_RECHECK Value = "+str(AUTO_RECHECK))
     else:
-        print "\tFAILED\tAUTO_RECHECK Value = "+str(AUTO_RECHECK)
+        print("\tFAILED\tAUTO_RECHECK Value = "+str(AUTO_RECHECK))
 
-    print "\nEND OF TESTS"
+    print("\nEND OF TESTS")
 
 
 ##PROGRAM START
-print "~~~~~~~~~~~~~~~~~~~~~~\n"\
+print("~~~~~~~~~~~~~~~~~~~~~~\n"\
      +"~   fileMover v0.1   ~\n"\
-     +"~~~~~~~~~~~~~~~~~~~~~~\n"
+     +"~~~~~~~~~~~~~~~~~~~~~~\n")
 
 if UNIT_TEST_ENABLE:                    #Unit tests start
     getSettings()
@@ -438,10 +438,10 @@ while True:                             #Loops continuously for the auto recheck
         rctime = datetime.datetime.now()+datetime.timedelta(seconds=RECHECK_MINS*60)
         printtime = str(rctime.hour)+":"+str(rctime.minute)+":"+str(rctime.second)
 
-        print "\nFINSHED CHECKING. WILL CHECK AGAIN AT "+printtime
+        print("\nFINSHED CHECKING. WILL CHECK AGAIN AT "+printtime)
         time.sleep(RECHECK_MINS*60)
     else:
         break                           #Otherwise, break out of the loop.
 
-print "\nFinished!"
+print("\nFinished!")
 ##PROGRAM END

@@ -280,7 +280,7 @@ def removeFile(file):
     try:
         os.remove(file)
 
-    catch Exception as exc:
+    except Exception as exc:
         print exc
         exit()
 
